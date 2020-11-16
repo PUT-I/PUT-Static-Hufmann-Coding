@@ -1,0 +1,389 @@
+Rozdział 11. Wskaźniki
+ 18 lipca 2012
+To jest ostatni rozdział z części poświęconej podstawom języka C++. Trzymaj się, bo niedługo podniesiemy poprzeczkę! Wskaźniki powodują wystąpienie gęsiej skórki u wielu początkujących programistów, ale wbrew pozorom ich zrozumienie wcale nie jest trudne. Trzeba tylko uważnie przeczytać tekst rozdziału. Gdy przebrniesz przez te trudności, wszystko inne będzie Ci się wydawać o wiele łatwiejsze.
+Mimo że jeszcze nic na ten temat nie pisałem, wskaźników używa się we wszystkich programach w języku C++. Wskaźniki są po prostu wszędzie. Jednak w naszych dotychczasowych programach były one ukryte i nie używaliśmy ich w sposób bezpośredni. W tym rozdziale to się zmieni. Nauczysz się w nim precyzyjnie zarządzać zawartością pamięci komputera.
+Ponieważ treść tego rozdziału jest dość skomplikowana, za pierwszym razem nie wszystko może Ci się wydać jasne. Dlatego koniecznie dokładnie przeanalizuj wszystkie przykłady i w razie potrzeby przeczytaj go kilka razy. Wskaźniki są bardzo ważne i musisz umieć się nimi posługiwać!
+11.1. Adresy w pamięci
+Pamiętasz rozdział o pamięci? Ten w którym zostało wprowadzone pojęcie zmiennej? Warto go przeczytać teraz jeszcze raz i dobrze zapamiętać znajdujące się w nim schematy.
+Wcześniej napisałem, że gdy deklarujemy zmienną, komputer udostępnia nam fragment swojej pamięci i nadaje mu etykietę, która stanowi nazwę zmiennej.
+1
+2
+3
+4
+5    int main()
+{
+    int wiekUzytkownika(16);
+    return 0;
+}
+Sposób użycia pamięci przez powyższy kod można przedstawić za pomocą poniższego schematu:
+Wszystko jest pięknie, ale niestety muszę się przyznać, że trochę Cię oszukałem. A dokładniej mówiąc dokonałem pewnego uproszczenia. Orientujesz się już, że w komputerze wszystko jest uporządkowane i zgodne z logiką. Z tego wynika, że system etykietek zmiennych, o którym pisałem do tej pory jest niepoprawny.
+Pamięć komputera rzeczywiście dzieli się na „szufladki” (częściej zwane np. komórkami). To jest prawda. Ich liczba jest gigantyczna i w nowoczesnych komputerach wynosi wiele miliardów! Do zapanowania nad taką ilością komórek potrzebny jest specjalny system zarządzania. Dlatego każda komórka ma przypisany unikalny numer zwany adresem.
+Na powyższej ilustracji pokazane są adresy komórek pamięci. Nasz program używa jednej z nich, o adresie 53768, do przechowywania swojej zmiennej.
+W pamięci nie przechowuje się zmiennych!
+Należy podkreślić, że każda zmienna ma jeden adres i każdy adres może być przypisany tylko do jednej zmiennej na raz. Wynika z tego, że adres jest drugim sposobem na dostęp do zmiennej. Zatem sposoby dostępu do komórki zaznaczonej na powyższym schemacie na żółto są następujące:
+•    Poprzez nazwę (etykietę), jak to robiliśmy do tej pory
+•    Poprzez adres (numer komórki). Innymi słowy, możemy wydać komputerowi polecenie „Wyświetl zawartość adresu 53768” albo „Wyświetl zawartość adresów 1267 i 91238”.
+Czy masz ochotę to wypróbować? Pewnie zadajesz sobie pytanie, czemu to w ogóle ma służyć. Przecież posługiwanie się etykietami do tej pory wystarczało i nie było z nimi żadnego problemu. To prawda, ale wkrótce się przekonasz, że czasami korzystanie z adresów jest konieczne.
+Najpierw jednak nauczę Cię sprawdzać adresy zmiennych.
+11.1.1. Wyświetlnie adresów
+W języku C++ do pobierania adresu zmiennej służy znak &. Aby na przykład wyświetlić adres zmiennej wiekUzytkownika, można napisać &wiekUzytkownika:
+1
+2
+3
+4
+5
+6
+7
+8
+9	#include <iostream>
+using namespace std;
+ 
+int main()
+{
+    int wiekUzytkownika(16);
+    cout << "Adres zmiennej to: " << &wiekUzytkownika << endl; // Wyświetlenie adresu zmiennej
+    return 0;
+}
+U mnie program ten zwrócił następujący wynik:
+Adres zmiennej to: 0x22ff1cU Ciebie wynik na pewno będzie inny. Wartość ta zmienia się nawet między kolejnymi uruchomieniami programu na tym samym komputerze.
+Mimo iż w zwróconej wartości znajdują się litery, jest to tak naprawdę liczba, tylko że wyrażona w systemie szesnastkowym. Jest to jeden z systemów liczbowych, wyjątkowo lubiany przez komputery. Na co dzień najczęściej posługujemy się systemem dziesiętnym, w którym powyższa wartość wynosiłaby 2293532. Chociaż informacja ta na niewiele się przydaje.
+Oczywiście potrzeba wyświetlenia adresu zmiennej występuje bardzo rzadko. Chodzi mi tylko o to, abyś zapamiętał tę notację. Znak & można czytać „adres…”, a zatem instrukcja cout << &a; w języku C++ po polsku brzmi „Wyświetl adres zmiennej a”.
+Znaku & używaliśmy już w tym kursie do czegoś innego: do deklarowania referencji. Znak ten ma dwa zastosowania, dlatego uważaj aby się nie pomylić!
+Zobaczmy w takim razie, do czego może nam się przydać znajomość adresu.
+11.2. Wskaźniki
+Adres jest liczbą, a my znamy kilka typów danych do przechowywania liczb, np.: int, unsigned int i double. Czy w takim razie można zapisać adres w zmiennej? Tak, ale nie żadnego z wymienionych typów. Do przechowywania adresów służy specjalny typ zwany wskaźnikiem.
+Wskaźnik to zmienna zawierająca adres innej zmiennej.
+Zapamiętaj to zdanie. Może Ci ono uratować humor w trudnych chwilach podczas lektury dalszej części tego rozdziału.
+11.2.1. Deklarowanie wskaźnika
+Deklaracja wskaźnika podobnie jak każdej innej zmiennej składa się z dwóch elementów: typu i nazwy. W przypadku drugiego elementu nie ma nic niezwykłego. Obowiązują takie same zasady, jak dla wszystkich zmiennych. Natomiast typ wskaźnika jest dość niezwykły. Najpierw określa się typ zmiennej, a następnie dodaje gwiazdkę (*), np.:
+1    int *wskaznik;
+Jest to deklaracja wskaźnika, w którym można przechowywać adres zmiennej typu int.
+Równie dobrze można by było napisać int* wskaźnik (gwiazdka przy nazwie typu). Wadą tego rodzaju zapisu jest to, że uniemożliwia zadeklarowanie kilku wskaźników w jednym wierszu, np.: int* wskaznik1, wskaznik2, wskaznik3;. Po wykonaniu przez program tej instrukcji, tylko zmienna wskaznik1 będzie wskaźnikiem, natomiast pozostałe dwie będą zwykłymi zmiennymi typu int.
+Wskaźnik można utworzyć dla każdego typu zmiennej:
+1
+2
+3
+4
+5
+6
+7
+8
+9    double *wskaznikA; // Wskaźnik do przechowywania adresu liczby zmiennoprzecinkowej
+ 
+unsigned int *wskaznikB; // Wskaźnik do przechowywania adresu dodatniej liczby całkowitej
+ 
+string *wskaznikC; // Wskaźnik do przechowywania adresu łańcucha znaków
+ 
+vector<int> *wskaznikD; // Wskaźnik do przechowywania adresu dynamicznej tablicy liczb całkowitych
+ 
+int const *wskaznikE; // Wskaźnik do przechowywania adresu stałej typu całkowitoliczbowego
+Na razie żaden z tych wskaźników nie zawiera żadnego wartościowego z naszego punktu widzenia adresu. Jest to bardzo niebezpieczna sytuacja. Jeśli zechcesz użyć któregoś z nich, nie będziesz wiedział, którą komórkę w pamięci on wskazuje. Może to mieć duże znaczenie, gdy np. będzie chodziło o zmienną zawierającą hasło do systemu Windows albo bieżącą godzinę. Myślę, że przytoczony przykład wystarczy, aby zdać sobie sprawę, jak ważne jest poprawne posługiwanie się wskaźnikami. Dlatego NIGDY nie należy deklarować wskaźnika nie przypisując mu od razu adresu.
+Aby być spokojnym, najlepiej jest każdemu nowo tworzonemu wskaźnikowi przypisać wartość 0:
+1
+2
+3
+4
+5
+6    int *wskaznik(0);
+double *wskaznikA(0);
+unsigned int *wskaznikB(0);
+string *wskaznikC(0);
+vector<int> *wskaznikD(0);
+int const *wskaznikE(0);
+Jeśli dokładnie przyjrzysz się przedstawionemu wcześniej schematowi pamięci, to zauważysz, że pierwsza komórka ma numer 1, a więc komórka o numerze 0 nie istnieje. W związku z tym przypisując wskaźnikowi adres 0 zaznaczasz, że wskaźnik ten nie wskazuje żadnej komórki pamięci.
+Zapamiętaj: każdemu nowo tworzonemu wskaźnikowi przypisuj wartość 0.
+11.2.2. Zapisywanie adresu
+Po zadeklarowaniu zmiennej można w niej zapisać wartość. Wiesz już jak sprawdzić adres zmiennej — przy użyciu znaku &. Zatem do dzieła!
+1
+2
+3
+4
+5
+6
+7
+8
+9    int main()
+{
+    int wiekUzytkownika(16);    // Zmienna typu int
+    int *ptr(0);               // Wskaźnik mogący przechowywać adres zmiennej typu int
+ 
+    ptr = &wiekUzytkownika;  // Zapisanie adresu zmiennej wiekUzytkownika we wskaźniku ptr
+ 
+    return 0;
+}
+Najbardziej interesuje nas wiersz 6. powyższego kodu. Znajdująca się w nim instrukcja zapisuje adres zmiennej wiekUzytkownika we wskaźniku ptr. Możemy zatem powiedzieć, że teraz wskaźnik ptr wskazuje zmienną wiekUzytkownika. Spójrzmy, jak to będzie wyglądać na schemacie.
+Na rysunku tym widać kilka dobrze już nam znanych elementów. Mamy siatkę komórek i zmienną wiekUzytkownika w komórce o numerze 53768. Nowością jest oczywiście wskaźnik. Pod adresem 14566 znajduje się zmienna o nazwie ptr, której wartością jest adres 53768 zmiennej wiekUzytkownika.
+To w zasadzie wszystko, co trzeba wiedzieć o wskaźnikach. Może Ci się to w tej chwili wydawać bez sensu (po co zapisywać adres zmiennej w innym miejscu w pamięci), ale uwierz mi, niedługo wszystko się wyjaśni. Jeśli rozumiesz powyższy schemat, możesz próbować pisać nawet najbardziej skomplikowane programy.
+11.2.3. Wyświetlanie adresu
+Tak jak w przypadku wszystkich zmiennych, zawartość wskaźnika można wyświetlić.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15	#include <iostream>
+using namespace std;
+ 
+int main()
+{
+    int wiekUzytkownika(16);
+    int *ptr(0);
+ 
+    ptr = &wiekUzytkownika;
+ 
+    cout << "Adres zmiennej wiekUzytkownika: " << &wiekUzytkownika << endl;
+    cout << "Wartość wskaźnika to: " << ptr << endl;
+ 
+    return 0;
+}
+Wynik działania tego programu jest następujący:
+Adres zmiennej wiekUzytkownika: 0x2ff18 Wartość wskaźnika: 0x2ff18
+Zatem wartością wskaźnika jest adres wskazywanej przez niego zmiennej.
+11.2.4. Uzyskiwanie dostępu do wskazywanej wartości
+Jak wcześniej napisałem wskaźniki umożliwiają dostęp do zmiennych bez podawania ich nazw. Poniżej znajduje się przykładowy kod, w którym użyto wskaźnika w celu wyświetlenia wartości wskazywanej przezeń zmiennej. Konieczne było użycie operatora * z tym wskaźnikiem.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11    int main()
+{
+    int wiekUzytkownika(16);
+    int *ptr(0);
+ 
+    ptr= &wiekUzytkownika;
+ 
+    cout << "Wartość zmiennej to:  " << *ptr << endl;
+ 
+    return 0;
+}
+Napotykając instrukcję cout << *ptr komputer wykonuje następujące czynności:
+1.    Przejście do miejsca w pamięci o nazwie ptr
+2.    Odczytanie zapisanej tam wartości
+3.    Przejście pod wskazany adres
+4.    Odczytanie wartości zapisanej pod wskazanym adresem
+5.    Wyświetlenie tej wartości, w tym przypadku jest to liczba 16
+Przy użyciu gwiazdki uzyskujemy dostęp do wartości wskazywanej zmiennej. Czynność tę nazywamy dereferencję albo wyłuskiwaniem wskaźnika. Jest to drugi sposób uzyskiwania dostępu do wartości zmiennej.
+Tylko do czego to może być potrzebne? Pewnie już nie raz zadawałeś sobie to pytanie. Zgoda, z początku wydaje się to niejasne, ale jeszcze Ci nie odpowiem. Jeśli chcesz się wszystkiego dowiedzieć, przeczytaj ten rozdział do końca.
+11.2.5. Uporządkowanie wiadomości o notacji
+Nie da się ukryć, że notacja związana ze wskaźnikami jest dość skomplikowana. Zarówno gwiazdka jak i znak & mają różne znaczenia w zależności od tego, gdzie zostaną użyte. Ale to nie moja wina. Jeśli masz jakieś pretensje, zgłoś je do twórców języka C++. To oni to wszystko wymyślili.
+Dla zmiennej int liczba:
+•    zapis liczba pozwala uzyskać dostęp do wartości tej zmiennej,
+•    zapis &liczba pozwala uzyskać adres tej zmiennej.
+Dla wskaźnika int *wskaznik:
+•    zapis wskaznik pozwala uzyskać dostęp do wartości wskaźnika, a więc adresu wskazywanej przez niego zmiennej;
+•    zapis *wskaznik pozwala uzyskać dostęp do wartości wskazywanej zmiennej.
+To są najważniejsze rzeczy, które trzeba zapamiętać z tej części rozdziału. Aby przyswoić sobie nowe wiadomości i lepiej wszystko zrozumieć, poćwicz tworzenie wskaźników, wyświetlanie adresów, używanie wskaźników itp.
+Naukę programowania przy użyciu wskaźników można streścić znanym powiedzeniem: „Praktyka czyni mistrza”. Aby je zrozumieć, koniecznie trzeba ich trochę poużywać. Nawet najlepsi na początku miewają z nimi problemy. Jeśli zaczęła Cię boleć głowa, weź aspirynę i zrób sobie przerwę i przeczytaj tę część rozdziału jeszcze kilka razy. Zwróć uwagę na schematy, bo mogą Ci bardzo pomóc!
+11.3. Dynamiczna alokacja
+Chcesz w końcu dowiedzieć się, do czego służą wskaźniki? Na pewno? Dobrze, w takim razie w tym podrozdziale pokażę Ci jedno z ich zastosowań.
+11.3.1. Automatyczne zarządzanie pamięcią
+W poprzednich rozdziałach pisałem, że program napotykając definicję zmiennej wykonuje następujące czynności:
+1.    Prosi komputer o przydzielenie mu miejsca w pamięci. Fachowo takie przydzielenie nazywa się alokacją pamięci.
+2.    Zapisuje w tej zmiennej dostarczoną wartość. Ta czynność nazywa się inicjacją zmiennej.
+Wszystko to dzieje się automatycznie. Analogicznie, gdy program dojdzie do końca funkcji, samodzielnie oddaje zajmowaną w niej pamięć. Nazywa się to zwalnianiem pamięci. To także odbywa się automatycznie. Nigdy nie musieliśmy pisać dla komputera instrukcji typu „Możesz już odebrać ten fragment pamięci, bo już go nie potrzebuję”.
+Wszystkie te czynności odbywały się automatycznie. Ale teraz wykonamy je ręcznie i do tego właśnie niezbędne nam będą wskaźniki.
+11.3.2. Alokowanie pamięci
+Aby ręcznie zażądać miejsca w pamięci, należy użyć operatora new. Powoduje on zaalokowanie dla nas miejsca w pamięci i zwraca wskaźnik wskazujący to miejsce.
+1
+2    int *wskaznik(0);
+wskaznik = new int;
+Instrukcja znajdująca się w drugim wierszu powoduje alokowanie w pamięci miejsca na liczbę całkowitą i zapisanie adresu tej liczby we wskaźniku wskaznik. Najlepiej przedstawić to na schemacie.
+Schemat ten jest bardzo podobny do poprzedniego. Przedstawia użycie dwóch miejsc w pamięci:
+•    Komórki nr 14563 zawierającej niezainicjowaną zmienną typu int
+•    Komórki nr 53771 zawierającej wskaźnik na tę zmienną
+Nic nowego. Ważne w tym przypadku jest to, że zmienna znajdująca się w komórce 14563 nie ma etykiety. W związku z tym jedynym sposobem uzyskania do niej dostępu jest użycie wskaźnika.
+Gdy zmienisz wartość tego wskaźnika, stracisz ostatnią możliwość uzyskania dostępu do tego miejsca w pamięci. Nie będziesz wówczas mógł już go w żaden sposób użyć. Miejsce to będzie zajęte, ale bezużyteczne. Sytuację taką nazywamy wyciekiem pamięci.
+Zmiennej alokowanej ręcznie używa się w taki sam sposób, jak każdej innej. Trzeba tylko pamiętać, że dostęp do niej można uzyskać wyłącznie poprzez wskaźnik i jego dereferencję.
+1
+2
+3
+4    int *wskaznik(0);
+wskaznik = new int;
+ 
+*wskaznik = 2; // Uzyskujemy dostęp do miejsca w pamięci, aby zmienić przechowywaną w nim wartość
+Teraz nasza komórka pamięci ma zapisaną wartość. W związku z tym obecnie sytuacja w pamięci przedstawia się następująco:
+Pomijając nietypowy sposób dostępu, mamy taką samą zmienną, jak każda inna. Teraz musimy jeszcze tylko nauczyć się oddawać komputerowi to, co nam uprzejmie pożyczył.
+11.3.3. Zwalnianie pamięci
+Gdy określony fragment pamięci nie jest nam już potrzebny, należy go zwrócić komputerowi. Służy do tego operator delete.
+1
+2
+3
+4    int *wskaznik(0);
+wskaznik = new int;
+ 
+delete wskaznik;    // Zwalniamy fragment pamięci
+Wykonując tę czynność sprawiamy, że komputer może użyć tej pamięci do innych celów. Wskaźnik nadal istnieje i cały czas wskazuje to samo miejsce, ale my nie mamy już prawa go używać.
+Ten rysunek jest bardzo wymowny. Strzałka pokazuje, że wskaźnik prowadzi do miejsca, które już do nas nie należy. Dlatego kategorycznie nie możemy już go używać. Wyobraź sobie, że fragment, o którym mowa zostanie alokowany w jakimś innym programie. Gdyby tak było i byśmy użyli tego wskaźnika w tym programie, to zmodyfikowalibyśmy zmienne innej aplikacji.
+Dlatego też po zwolnieniu pamięci za pomocą operatora delete wskaźnik koniecznie należy wyzerować. Zapominanie o tym jest częstym źródłem błędów w programach.
+1
+2
+3
+4
+5    int *wskaznik(0);
+wskaznik = new int;
+ 
+delete wskaznik;    // Zwalniamy pamięć
+wskaznik = 0;       // Przestawiamy wskaźnik na nieistniejącą komórkę pamięci
+Nie zapominaj zwalniać pamięci. Jeśli o tym zapomnisz, program będzie stopniowo wykorzystywał jej coraz więcej, aż w końcu wyczerpie całą. Wówczas nastąpi awaria programu.
+11.3.4. Kompletny przykład
+Na zakończenie tej części rozdziału przedstawiam kompletny przykład: program proszący użytkownika o podanie imienia i wyświetlający je przy użyciu wskaźnika.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18	#include <iostream>
+using namespace std;
+ 
+int main()
+{
+     int* wskaznik(0);
+     wskaznik = new int;
+ 
+     cout << "Ile masz lat? ";
+     cin >> *wskaznik; // Zapisujemy dane w miejscu wskazywanym przez wskaznik
+ 
+     cout << "Masz " << *wskaznik << " lat." << endl; // Użycie wskaźnika *wskaznik
+ 
+     delete wskaznik;   // Zwolnienie pamięci
+     wskaznik = 0;      // Wyzerowanie wskaznika
+ 
+     return 0;
+}
+Ta wersja programu jest bardziej skomplikowana niż wersja bez dynamicznej alokacji! Ale w zamian mamy w niej pełną kontrolę nad alokacją i zwalnianiem pamięci.
+W większości przypadków nie ma potrzeby tak komplikować sobie pracy. W pełni przydatność wskaźników zrozumiesz w dalszych częściach kursu, w których opisywane są techniki tworzenia okien przy użyciu biblioteki Qt. Tam operatory new i delete są bardzo często używane. Dzięki nim możemy precyzyjnie kontrolować, kiedy np. wybrane okno ma zostać otwarte, a kiedy zamknięte.
+11.4. Kiedy używać wskaźników
+Obiecałem, że napiszę, kiedy używa się wskaźników. Nadszedł w końcu czas spełnić tę prośbę. Wskaźników używa się przede wszystkim w trzech przypadkach:
+•    Gdy chcemy mieć kontrolę nad momentem zajęcia i zwolnienia wybranego fragmentu pamięci
+•    Gdy chcemy podzielić zmienną na kilka fragmentów kodu
+•    Gdy chcemy wybrać wartość spośród kilku możliwości do wyboru
+Jeśli żaden z tych trzech punktów nie opisuje Twojej potrzeby, to znaczy, że nie potrzebujesz wskaźnika. Pierwszy z wymienionych przypadków już znasz, a wiec objaśnię tylko dwa pozostałe.
+11.4.1. Rozdzielanie zmiennej
+Na razie nie mogę podać kompletnego przykładu, który ilustrowałby taką sytuację, ponieważ gdybym to zrobił i tak nie byłby on dla Ciebie w tej chwili zbyt interesujący. Wszystko rozjaśni się, gdy poznasz zasady programowania obiektowego.
+Dlatego na razie przedstawię bardziej wizualny przykład. Grałeś kiedyś w jakąś grę strategiczną? Poniżej znajduje się zrzut ekranu ze słynnej gry tego typu o nazwie Warcraft III.
+Napisanie takiej gry to niezwykle skomplikowane zadanie. Ale nas interesują tylko niektóre użyte do jej budowy mechanizmy. Na rysunku widać ludzi w czerwonych strojach atakujących orków w niebieskich strojach. Każda postać ma precyzyjnie zaznaczony cel. Na przykład znajdujący się środku ekranu strzelec mierzy do dużej niebieskiej postaci, która wymachuje toporem.
+W dalszej części kursu pokażę Ci, jak tworzy się obiekty, które są bardziej rozbudowanymi zmiennymi. W takiej grze, jak pokazana na powyższym zrzucie każda postać może być właśnie obiektem.
+Co zrobić, aby wskazać cel postaci w czerwonym? Na razie jeszcze nie znasz szczegółów, ale możliwe że już coś Ci świta w głowie. Tak, należy użyć wskaźnika. Każda postać ma wskaźnik wskazujący jej cel. Wskaźnik w takim przypadku umożliwia określenie, co postać widzi i co ma atakować. Możemy na przykład napisać kod podobny do poniższego:
+1    Postac *cel; // Wskaźnik wskazujący inną postać
+Gdy nie toczy się żadna bitwa, wskaźnik wskazuje adres 0, co oznacza że nie ma żadnego celu. Gdy bitwa jest w toku, wskaźnik wskazuje wroga. I w końcu, gdy wróg jest martwy wskaźnik zostaje przestawiony na inny adres, czyli na inną postać.
+Innymi słowy wskaźnik w takiej sytuacji pełni rolę strzałki wskazującej postaci jej wroga.
+Później pokażę Ci jak napisać taki kod. Co więcej tematem przewodnim następnej części tego kursu jest napisanie mini-gry RPG, ale na razie cicho, sza!
+11.4.2. Wybór spośród kilku elementów
+Trzeci z wymienionych przypadków pozwala na modyfikowanie programu przez użytkownika poprzez wybór opcji. Weźmy na przykład ćwiczenia na końcu tego rozdziału. Użytkownik ma przedstawionych kilka odpowiedzi na każde pytanie i musi wybrać jedną spośród nich. Gdy użytkownik dokona wyboru, użyjemy wskaźnika do zaznaczenia, którą odpowiedź wybrał.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43	#include <iostream>
+#include <string>
+using namespace std;
+ 
+int main()
+{
+    string odpA, odpB, odpC;
+    odpA = "Lęk przed grami losowymi";
+    odpB = "Lęk przed ciemnością";
+    odpC = "Lęk przed piątkiem trzynastego";
+ 
+    cout << "Co to jest nyktofobia? " << endl; // Zadajemy pytanie
+    cout << "A) " << odpA << endl; // Wyświetlamy trzy możliwości do wyboru
+    cout << "B) " << odpB << endl;
+    cout << "C) " << odpC << endl;
+ 
+    char odpowiedz;
+    cout << "Twoja odpowiedź (A, B lub C): ";
+    cin >> odpowiedz;                         // Pobieramy odpowiedź od użytkownika
+ 
+    string *odpowiedzUzytkownika(0);          // Wskaźnik, który będzie wskazywał wybraną przez użytkownika odpowiedź
+    switch(odpowiedz)
+    {
+    case 'A':
+        odpowiedzUzytkownika = &odpA;  // Ustawiamy wskaźnik na odpowiedź
+        break;
+    case 'B':
+        odpowiedzUzytkownika = &odpB;
+        break;
+    case 'C':
+        odpowiedzUzytkownika = &odpC;
+        break;
+    default:
+        cout << "Nieprawidłowy wybór" << endl;
+        odpowiedzUzytkownika = &odpA;   // Domyślnie wybieramy A
+        break;
+    }
+ 
+    // Teraz możemy użyć wskaźnika do wyświetlenia wybranej przez użytkownika odpowiedzi
+    cout << "Twoja odpowiedź: " << *odpowiedzUzytkownika << endl;
+ 
+    return 0;
+}
+Gdy wskaźnik zostanie ustawiony w pętli switch, możemy go wykorzystać jako środek dostępu do odpowiedzi użytkownika. Dzięki temu mamy bezpośredni dostęp do tej zmiennej bez konieczności wykonywania testu za każdym razem, gdy jest nam ona potrzebna. Wartość tej zmiennej nie jest nam znana z góry, ponieważ zależy ona od tego, co wpisze użytkownik.
+To jest najrzadziej spotykane z wymienionych trzech zastosowań wskaźników, ale zdarza się, że jest to potrzebne. Zatem na pewno często będziesz miał okazję, aby sobie przypomnieć o wskaźnikach.
+Na tym kończymy podstawowy kurs języka C++. Możliwe, że nie wszystko dokładnie zrozumiałeś i przyswoiłeś, ale to nieważne! Prawdziwa wiedza przychodzi z praktyką i uwierz mi, że wiele osób, włącznie ze mną, potrzebuje sporo czasu, aby wszystko do nich dotarło. Niektóre z pojęć i technik opisanych w tej części kursu będą powtarzać się wielokrotnie w dalszych rozdziałach, a więc jest to dobry moment na zrobienie sobie powtórzenia i uzupełnienie wiadomości.
+Gotowy? W takim razie możesz wejść do magicznego świata programowania obiektowego!
+
