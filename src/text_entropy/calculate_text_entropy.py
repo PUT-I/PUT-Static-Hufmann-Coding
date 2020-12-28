@@ -9,7 +9,31 @@ NON_PRINTABLE_SYMBOLS = {
 """ dictionary with printable form for non-printable symbols """
 
 
-def _count_symbols_in_text(filename: str) -> dict:
+def count_symbols_in_string(text: str, escape_symbols: bool = False, output_filename: str = "") -> dict:
+    csv = "symbol|count\n"
+    symbol_dict: dict = {}
+    for symbol in sorted(set(text)):
+        printable_symbol = symbol
+
+        if escape_symbols and symbol in NON_PRINTABLE_SYMBOLS:
+            printable_symbol = NON_PRINTABLE_SYMBOLS[symbol]
+
+        symbol_count = text.count(symbol)
+        symbol_dict[printable_symbol] = symbol_count
+        if output_filename != "":
+            print(f"{printable_symbol}|{symbol_count}")
+        csv += f"{printable_symbol}|{symbol_count}\n"
+
+    if output_filename == "":
+        return symbol_dict
+
+    with open(f"{output_filename.replace('.txt', '_symbols.csv')}", mode="w+", encoding="utf-8") as file:
+        file.write(csv)
+
+    return symbol_dict
+
+
+def count_symbols_in_file(filename: str) -> dict:
     """ Counts symbols in text from file and saves result to dict and to CSV file
 
     :param filename
@@ -20,24 +44,7 @@ def _count_symbols_in_text(filename: str) -> dict:
 
     with open(filename, mode="r+", encoding="utf-8") as file:
         text: str = file.read()
-
-    csv = "symbol|count\n"
-    symbol_dict: dict = {}
-    for symbol in sorted(set(text)):
-        printable_symbol = symbol
-
-        if symbol in NON_PRINTABLE_SYMBOLS:
-            printable_symbol = NON_PRINTABLE_SYMBOLS[symbol]
-
-        symbol_count = text.count(symbol)
-        symbol_dict[printable_symbol] = symbol_count
-        print(f"{printable_symbol}|{symbol_count}")
-        csv += f"{printable_symbol}|{symbol_count}\n"
-
-    with open(f"{filename.replace('.txt', '_symbols.csv')}", mode="w+", encoding="utf-8") as file:
-        file.write(csv)
-
-    return symbol_dict
+    return count_symbols_in_string(text)
 
 
 def _calculate_entropy(symbol_dict: dict) -> str:
@@ -78,7 +85,7 @@ def _main() -> None:
     args = parser.parse_args()
 
     # Get result
-    symbol_dict: dict = _count_symbols_in_text(args.file)
+    symbol_dict: dict = count_symbols_in_file(args.file)
     entropy_csv = _calculate_entropy(symbol_dict)
 
     # Save result (entropy) to file
