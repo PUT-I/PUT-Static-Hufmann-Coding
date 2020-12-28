@@ -9,7 +9,15 @@ NON_PRINTABLE_SYMBOLS = {
 """ dictionary with printable form for non-printable symbols """
 
 
-def count_symbols_in_string(text: str, escape_symbols: bool = False, output_filename: str = "") -> dict:
+def count_symbols_in_string(text: str, escape_symbols: bool = False, output_file_path: str = "") -> dict:
+    """ Counts symbols in text from file and saves result to dict and to CSV file
+
+    :param text: UTF-8 encoded text
+    :param escape_symbols: if true non printable symbols are replaced with printable representation
+    :param output_file_path: path of output file, if set to "" file will not be written
+    :return: dictionary containing symbols as keys and their frequency as values
+    """
+
     csv = "symbol|count\n"
     symbol_dict: dict = {}
     for symbol in sorted(set(text)):
@@ -20,29 +28,29 @@ def count_symbols_in_string(text: str, escape_symbols: bool = False, output_file
 
         symbol_count = text.count(symbol)
         symbol_dict[printable_symbol] = symbol_count
-        if output_filename != "":
+        if output_file_path != "":
             print(f"{printable_symbol}|{symbol_count}")
         csv += f"{printable_symbol}|{symbol_count}\n"
 
-    if output_filename == "":
+    if output_file_path == "":
         return symbol_dict
 
-    with open(f"{output_filename.replace('.txt', '_symbols.csv')}", mode="w+", encoding="utf-8") as file:
+    with open(f"{output_file_path.replace('.txt', '_symbols.csv')}", mode="w+", encoding="utf-8") as file:
         file.write(csv)
 
     return symbol_dict
 
 
-def count_symbols_in_file(filename: str) -> dict:
+def count_symbols_in_file(file_path: str) -> dict:
     """ Counts symbols in text from file and saves result to dict and to CSV file
 
-    :param filename
+    :param file_path: path to file which contains UTF-8 text
     :return: dictionary containing symbols as keys and their frequency as values
     """
 
     global NON_PRINTABLE_SYMBOLS
 
-    with open(filename, mode="r+", encoding="utf-8") as file:
+    with open(file_path, mode="r+", encoding="utf-8") as file:
         text: str = file.read()
     return count_symbols_in_string(text)
 
