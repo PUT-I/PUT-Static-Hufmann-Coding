@@ -18,13 +18,14 @@ class HuffmanCodec:
 
     @staticmethod
     def encode_file(in_file_path: str, out_file_path: str, text_encoding: str = "utf-8",
-                    block_size: int = 1024 * 1024) -> None:
+                    block_size: int = 1024 * 1024, verbose: bool = False) -> None:
         """ Encodes file with Huffman coding
 
         :param in_file_path: path to input file
         :param out_file_path: path to output file
         :param block_size: size of blocks to be used in encoding
         :param text_encoding: text encoding of input file
+        :param verbose: if set to True more information is printed
         """
 
         with open(in_file_path, mode="r", encoding=text_encoding) as input_file, \
@@ -47,10 +48,21 @@ class HuffmanCodec:
             # Moves input file pointer to start position
             input_file.seek(0)
 
+            if verbose:
+                print("Symbol frequencies obtained")
+                print(str(frequencies).replace("{", "").replace("}", "").replace(", ", "\n"))
+                print()
+
             # Secondly text encoding is saved to output file
             text_encoding_length = len(text_encoding).to_bytes(1, byteorder="big", signed=False)
             output_file.write(text_encoding_length)
             output_file.write(text_encoding.encode(encoding="ascii"))
+
+            if verbose:
+                print("Text encoding saved")
+                print(f"Text encoding length : {text_encoding_length}")
+                print(f"Text encoding : {text_encoding}")
+                print()
 
             # Thirdly tree is created, encoded and saved to output file
             tree: HuffmanTree = HuffmanCodec._create_tree(frequencies)
@@ -60,6 +72,12 @@ class HuffmanCodec:
 
             output_file.write(encoded_tree_length_bytes)
             output_file.write(encoded_tree)
+
+            if verbose:
+                print("Huffman tree created")
+                print("Code")
+                print(str(HuffmanCodec._tree_to_dict(tree)).replace("{", "").replace("}", "").replace(", ", "\n"))
+                print()
 
             # Here progressbar is set upped
             file_stats = os.stat(in_file_path)
@@ -87,7 +105,7 @@ class HuffmanCodec:
             pb.print_progress_bar(data_size)
 
     @staticmethod
-    def decode_file(in_file_path: str, out_file_path: str) -> None:
+    def decode_file(in_file_path: str, out_file_path: str, verbose: bool = False) -> None:
         """ Encodes file with Huffman coding
 
         :param in_file_path: path to input file
@@ -99,11 +117,26 @@ class HuffmanCodec:
 
             # First Huffman tree is decoded
             text_encoding_length = int.from_bytes(input_file.read(1), byteorder="big", signed=False)  # In bytes
+
+            if verbose:
+                print("Text encoding obtained")
+                print(f"Text encoding length : {text_encoding_length}")
+
             text_encoding: str = input_file.read(text_encoding_length).decode("ascii")
+
+            if verbose:
+                print(f"Text encoding : {text_encoding}")
+                print()
 
             # Secondly Huffman tree is decoded
             tree_length = int.from_bytes(input_file.read(4), byteorder="big", signed=False)  # In bytes
             tree: HuffmanTree = HuffmanTree.decode(input_file.read(tree_length), text_encoding)
+
+            if verbose:
+                print("Huffman tree decoded")
+                print("Code")
+                print(str(HuffmanCodec._tree_to_dict(tree)).replace("{", "").replace("}", "").replace(", ", "\n"))
+                print()
 
             # Here progressbar is set upped
             file_stats = os.stat(in_file_path)
@@ -285,6 +318,8 @@ def _main() -> None:
     parser.add_argument("-o", "--output", type=str, required=True, help="Path to output file")
 
     # Optional argument
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Verbose flag (prints more information)")
     parser.add_argument("-d", "--decode", action="store_true",
                         help="Decode flag (with this flag program will work as decoder")
     parser.add_argument("-te", "--text-encoding",
@@ -296,9 +331,9 @@ def _main() -> None:
     args = parser.parse_args()
 
     if args.decode:
-        HuffmanCodec.decode_file(args.input, args.output)
+        HuffmanCodec.decode_file(args.input, args.output, args.verbose)
     else:
-        HuffmanCodec.encode_file(args.input, args.output, args.text_encoding, args.block_size)
+        HuffmanCodec.encode_file(args.input, args.output, args.text_encoding, args.block_size, args.verbose)
 
 
 if __name__ == "__main__":

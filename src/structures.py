@@ -151,10 +151,11 @@ class HuffmanTree:
         :param counter: counter (passed by reference) which indicates current index of bits array
         :return decoded Huffman tree node
         """
+        global UINT8_1
 
         index = counter.get()
         bit = bits[index]
-        if bit == np.uint(1):
+        if bit == UINT8_1:
             symbol_bits: np.array = bits[index + 1:index + 9]
             counter.increase(8)
             symbol = np.packbits(symbol_bits).tobytes().decode(encoding=text_encoding)
