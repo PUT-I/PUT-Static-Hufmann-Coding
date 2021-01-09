@@ -13,7 +13,7 @@ from src.structures import HuffmanTree, HuffmanNode, UINT8_1, UINT8_0
 from src.text_entropy.calculate_text_entropy import count_symbols_in_string
 
 
-class HuffmanCoder:
+class HuffmanCodec:
     """ This class provides Huffman encoding and decoding functionality """
 
     @staticmethod
@@ -53,7 +53,7 @@ class HuffmanCoder:
             output_file.write(text_encoding.encode(encoding="ascii"))
 
             # Thirdly tree is created, encoded and saved to output file
-            tree: HuffmanTree = HuffmanCoder._create_tree(frequencies)
+            tree: HuffmanTree = HuffmanCodec._create_tree(frequencies)
 
             encoded_tree = tree.encode()
             encoded_tree_length_bytes = len(encoded_tree).to_bytes(4, byteorder="big", signed=False)
@@ -77,7 +77,7 @@ class HuffmanCoder:
 
                 data_processed += len(data)
 
-                encoded, padding_length = HuffmanCoder._encode_data(data, tree)
+                encoded, padding_length = HuffmanCodec._encode_data(data, tree)
                 data_length_bytes = len(encoded).to_bytes(4, byteorder="big", signed=False)
                 padding_length_bytes = padding_length.to_bytes(1, byteorder="big", signed=False)
 
@@ -136,7 +136,7 @@ class HuffmanCoder:
                     data_processed += 4 + 1
 
                     pool_jobs.append(
-                        (pool.apply_async(HuffmanCoder._decode_data, (data_bytes, tree, padding_length)), data_length)
+                        (pool.apply_async(HuffmanCodec._decode_data, (data_bytes, tree, padding_length)), data_length)
                     )
 
                 # Wait for data to be processed
@@ -186,12 +186,12 @@ class HuffmanCoder:
             code_dict = {}
 
         if node.left is not None:
-            HuffmanCoder._node_to_dict(node.left, prefix + "0", code_dict)
+            HuffmanCodec._node_to_dict(node.left, prefix + "0", code_dict)
         else:
             code_dict[node.symbol] = prefix
 
         if node.right is not None:
-            HuffmanCoder._node_to_dict(node.right, prefix + "1", code_dict)
+            HuffmanCodec._node_to_dict(node.right, prefix + "1", code_dict)
         else:
             code_dict[node.symbol] = prefix
 
@@ -205,7 +205,7 @@ class HuffmanCoder:
         :return Huffman tree transformed to dictionary (key - symbol, value - Huffman code)
         """
 
-        return HuffmanCoder._node_to_dict(tree.root)
+        return HuffmanCodec._node_to_dict(tree.root)
 
     @staticmethod
     def _encode_data(data: str, tree: HuffmanTree) -> Tuple[bytes, int]:
@@ -216,7 +216,7 @@ class HuffmanCoder:
         :return encoded data and length of padding (in bits)
         """
 
-        code = HuffmanCoder._tree_to_dict(tree)
+        code = HuffmanCodec._tree_to_dict(tree)
         code_numpy = {}
 
         for symbol in code:
@@ -296,9 +296,9 @@ def _main() -> None:
     args = parser.parse_args()
 
     if args.decode:
-        HuffmanCoder.decode_file(args.input, args.output)
+        HuffmanCodec.decode_file(args.input, args.output)
     else:
-        HuffmanCoder.encode_file(args.input, args.output, args.text_encoding, args.block_size)
+        HuffmanCodec.encode_file(args.input, args.output, args.text_encoding, args.block_size)
 
 
 if __name__ == "__main__":
