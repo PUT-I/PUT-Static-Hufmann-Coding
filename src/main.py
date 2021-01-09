@@ -9,184 +9,29 @@ from typing import List, Dict, Tuple
 import numpy as np
 from console_progressbar import ProgressBar
 
+from src.structures import HuffmanTree, HuffmanNode, UINT8_1, UINT8_0
 from src.text_entropy.calculate_text_entropy import count_symbols_in_string
-
-
-class Counter:
-    """ This class stores int value to be passed by reference in functions """
-
-    def __init__(self, int_value: int = 0):
-        """ Initializes Counter class with int value
-
-        :param int_value: initial value of counter
-        """
-
-        self._value = int_value
-
-    def get(self) -> int:
-        """ Gets current counter value and increments it
-
-        :return counter value before increment
-        """
-
-        value_ = self._value
-        self._value += 1
-        return value_
-
-    def increase(self, inc_value: int) -> None:
-        """ Increments counter value
-
-        :param inc_value: value to be added to counter
-        """
-
-        self._value += inc_value
-
-    def __repr__(self):
-        """ Handles representation of Counter class instances """
-
-        return str(self._value)
-
-
-class HuffmanNode:
-    """ This class represents single node of Huffman tree """
-
-    def __init__(self, priority: float, left=None, right=None, symbol: str = ""):
-        """ Initializes HuffmanNode class instance
-
-        :param priority:
-        :param left: left child of node
-        :param right: right child of node
-        :param symbol:
-        """
-
-        self.priority: float = priority
-        self.left = left
-        self.right = right
-        self.symbol: str = symbol
-
-    def __eq__(self, other):
-        """ Handles comparison (equal) of HuffmanNode class instances
-
-        :param other: HuffmanNode class instance to be compared to
-        """
-
-        return self.priority == other.priority
-
-    def __lt__(self, other):
-        """ Handles comparison (lesser) of HuffmanNode class instances
-
-        :param other: HuffmanNode class instance to be compared to
-        """
-
-        return self.priority < other.priority \
-               or (self.priority == other.priority and self.symbol < other.symbol)
-
-    def __repr__(self):
-        """ Handles representation of HuffmanNode class instances """
-
-        return f'HuffmanNode(priority = {self.priority}, symbol = "{self.symbol}", ' \
-               f'hasLeft = {self.left is not None}, hasRight = {self.right is not None})'
-
-
-class HuffmanTree:
-    """ This class represents Huffman tree """
-
-    def __init__(self, root: HuffmanNode):
-        """ Initializes HuffmanTree class instance
-
-        :param root: root node of Huffman tree
-        """
-
-        self.root = root
-
-    def encode(self):
-        """ Encodes Huffman tree to binary form (filled with 0 to full bytes)
-
-        :return encoded Huffman tree
-        """
-
-        encoded = self._encode_node(self.root)
-        padding = np.zeros(shape=(8 - len(encoded) % 8,), dtype=np.uint8)
-        encoded = np.append(encoded, padding)
-        return np.packbits(encoded).tobytes()
-
-    @staticmethod
-    def decode(buffer: bytes):
-        """ Decodes Huffman tree from binary form
-
-        :param buffer: bytes to be decoded into huffman tree
-        :return decoded Huffman tree
-        """
-
-        array: np.array = np.unpackbits(np.frombuffer(buffer, dtype=np.uint8))
-        return HuffmanTree(HuffmanTree._decode_node(array, Counter()))
-
-    @staticmethod
-    def _encode_node(node: HuffmanNode, bits: np.array = np.empty(shape=(0,), dtype=np.uint8)) -> np.array:
-        """ Recursively encodes Huffman tree node
-
-        :param node: Huffman tree node
-        :param bits: bits of already encoded Huffman tree nodes
-        :return encoded Huffman tree node
-        """
-
-        if node.left is None and node.right is None:
-            bits = np.append(bits, HuffmanCoder.UINT8_1)
-
-            symbol_bits = np.unpackbits(np.frombuffer(node.symbol.encode(), dtype=np.uint8))
-            bits = np.append(bits, symbol_bits)
-        else:
-            bits = np.append(bits, HuffmanCoder.UINT8_0)
-            if node.left is not None:
-                bits = HuffmanTree._encode_node(node.left, bits)
-            if node.right is not None:
-                bits = HuffmanTree._encode_node(node.right, bits)
-
-        return bits
-
-    @staticmethod
-    def _decode_node(bits: np.array, counter: Counter) -> HuffmanNode:
-        """ Recursively decodes Huffman tree node
-
-        :param bits: bits of encoded Huffman tree
-        :param counter: counter (passed by reference) which indicates current index of bits array
-        :return decoded Huffman tree node
-        """
-
-        index = counter.get()
-        bit = bits[index]
-        if bit == np.uint(1):
-            symbol_bits: np.array = bits[index + 1:index + 9]
-            counter.increase(8)
-            symbol = np.packbits(symbol_bits).tobytes().decode()
-            return HuffmanNode(0, symbol=symbol)
-        else:
-            left_node = HuffmanTree._decode_node(bits, counter)
-            right_node = HuffmanTree._decode_node(bits, counter)
-            return HuffmanNode(0, left_node, right_node)
 
 
 class HuffmanCoder:
     """ This class provides Huffman encoding and decoding functionality """
 
-    UINT8_0 = np.uint8(0)
-    """ Constant value 0 of type uint8 """
-
-    UINT8_1 = np.uint8(1)
-    """ Constant value 1 of type uint8 """
-
     @staticmethod
-    def encode_file(in_file_path: str, out_file_path: str, block_size: int = 1024 * 1024) -> None:
+    def encode_file(in_file_path: str, out_file_path: str, text_encoding: str = "utf-8",
+                    block_size: int = 1024 * 1024) -> None:
         """ Encodes file with Huffman coding
 
         :param in_file_path: path to input file
         :param out_file_path: path to output file
         :param block_size: size of blocks to be used in encoding
+        :param text_encoding: text encoding of input file
         """
 
-        with open(out_file_path, mode="wb") as output_file, open(in_file_path, mode="r") as input_file:
+        with open(in_file_path, mode="r", encoding=text_encoding) as input_file, \
+                open(out_file_path, mode="wb") as output_file:
             output_file.write(bytes())
 
+            # First frequencies of each character in text are obtained
             frequencies: Dict[str, int] = {}
             while True:
                 data = input_file.read(block_size)
@@ -199,8 +44,15 @@ class HuffmanCoder:
                         frequencies[key] = frequencies[key] + frequencies_part[key]
                     else:
                         frequencies[key] = frequencies_part[key]
+            # Moves input file pointer to start position
             input_file.seek(0)
 
+            # Secondly text encoding is saved to output file
+            text_encoding_length = len(text_encoding).to_bytes(1, byteorder="big", signed=False)
+            output_file.write(text_encoding_length)
+            output_file.write(text_encoding.encode(encoding="ascii"))
+
+            # Thirdly tree is created, encoded and saved to output file
             tree: HuffmanTree = HuffmanCoder._create_tree(frequencies)
 
             encoded_tree = tree.encode()
@@ -209,11 +61,14 @@ class HuffmanCoder:
             output_file.write(encoded_tree_length_bytes)
             output_file.write(encoded_tree)
 
+            # Here progressbar is set upped
             file_stats = os.stat(in_file_path)
             data_size = file_stats.st_size
             pb = ProgressBar(total=data_size, prefix='Progress', suffix='finished', decimals=1, length=50, fill='X',
                              zfill='-')
             data_processed = 0
+
+            # Lastly file content is encoded and saved to output file
             while True:
                 pb.print_progress_bar(data_processed)
                 data = input_file.read(block_size)
@@ -242,17 +97,27 @@ class HuffmanCoder:
         with open(in_file_path, mode="rb") as input_file, open(out_file_path, mode="w") as output_file:
             output_file.write("")
 
-            tree_length = int.from_bytes(input_file.read(4), byteorder="big", signed=False)  # In bytes
-            tree: HuffmanTree = HuffmanTree.decode(input_file.read(tree_length))
+            # First Huffman tree is decoded
+            text_encoding_length = int.from_bytes(input_file.read(1), byteorder="big", signed=False)  # In bytes
+            text_encoding: str = input_file.read(text_encoding_length).decode("ascii")
 
+            # Secondly Huffman tree is decoded
+            tree_length = int.from_bytes(input_file.read(4), byteorder="big", signed=False)  # In bytes
+            tree: HuffmanTree = HuffmanTree.decode(input_file.read(tree_length), text_encoding)
+
+            # Here progressbar is set upped
             file_stats = os.stat(in_file_path)
             data_size = file_stats.st_size
             pb = ProgressBar(total=data_size, prefix='Progress', suffix='finished',
                              decimals=1, length=50, fill='X', zfill='-')
             data_processed = 4 + tree_length
 
+            # This pool will be used for data blocks decoding
             pool = Pool(processes=multiprocessing.cpu_count())
             pool_jobs: List[Tuple[ApplyResult, int]] = []
+
+            # Thirdly block from file are read and decoded in separate process
+            # Finish is set to True when all data is read
             finish = False
             while not finish:
                 # Read enough data to fill pool jobs
@@ -284,7 +149,7 @@ class HuffmanCoder:
 
     @staticmethod
     def _create_tree(frequencies: Dict[str, float]) -> HuffmanTree:
-        """ Encodes file with Huffman coding
+        """ Create Huffman tree  from symbol frequencies
 
         :param frequencies: dictionary of symbol frequencies
         :return Huffman tree
@@ -309,7 +174,7 @@ class HuffmanCoder:
 
     @staticmethod
     def _node_to_dict(node: HuffmanNode, prefix: str = "", code_dict: dict = None) -> dict:
-        """ Converts Huffman tree node to dicitonary
+        """ Converts Huffman tree node to dictionary
 
         :param node: Huffman tree node
         :param prefix: bits that had been already red
@@ -358,9 +223,9 @@ class HuffmanCoder:
             code_word = []
             for bit in code[symbol]:
                 if bit == "1":
-                    code_word.append(HuffmanCoder.UINT8_1)
+                    code_word.append(UINT8_1)
                 elif bit == "0":
-                    code_word.append(HuffmanCoder.UINT8_0)
+                    code_word.append(UINT8_0)
                 else:
                     raise RuntimeError
             code_numpy[symbol] = code_word
@@ -369,7 +234,7 @@ class HuffmanCoder:
         for byte in data:
             encoded_list += code_numpy[byte]
 
-        padding = [HuffmanCoder.UINT8_0] * (8 - len(encoded_list) % 8)
+        padding = [UINT8_0] * (8 - len(encoded_list) % 8)
         encoded_list += padding
 
         array = np.array(encoded_list, dtype=np.uint8)
@@ -393,16 +258,16 @@ class HuffmanCoder:
         bits = bits[:-padding_length]
 
         bit_counter_processed = np.uint32(0)
-        bit_counter = HuffmanCoder.UINT8_0
+        bit_counter = UINT8_0
         for bit in bits:
-            if bit == HuffmanCoder.UINT8_0 and current_node.left is not None:
+            if bit == UINT8_0 and current_node.left is not None:
                 current_node = current_node.left
-            elif bit == HuffmanCoder.UINT8_1 and current_node.right is not None:
+            elif bit == UINT8_1 and current_node.right is not None:
                 current_node = current_node.right
 
             if current_node.left is None and current_node.right is None:
                 bit_counter_processed += bit_counter
-                bit_counter = HuffmanCoder.UINT8_0
+                bit_counter = UINT8_0
                 decoded_data += current_node.symbol
                 current_node = tree.root
             bit_counter += 1
@@ -422,15 +287,18 @@ def _main() -> None:
     # Optional argument
     parser.add_argument("-d", "--decode", action="store_true",
                         help="Decode flag (with this flag program will work as decoder")
-    parser.add_argument("-w", "--word-length", type=int, default=8, help="Input word length in bits")
-    parser.add_argument("-b", "--block-size", type=int, default=1048576, help="Size of blocks used while encoding")
+    parser.add_argument("-te", "--text-encoding",
+                        help="Text encoding of input text (look at: https://docs.python.org/3/library/codecs.html)",
+                        default="utf-8")
+    parser.add_argument("-b", "--block-size", type=int, default=1048576,
+                        help="Size of blocks (in bytes) used while encoding")
 
     args = parser.parse_args()
 
     if args.decode:
         HuffmanCoder.decode_file(args.input, args.output)
     else:
-        HuffmanCoder.encode_file(args.input, args.output, args.block_size)
+        HuffmanCoder.encode_file(args.input, args.output, args.text_encoding, args.block_size)
 
 
 if __name__ == "__main__":
