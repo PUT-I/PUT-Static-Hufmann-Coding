@@ -110,6 +110,7 @@ class HuffmanCodec:
 
         :param in_file_path: path to input file
         :param out_file_path: path to output file
+        :param verbose: if set to True more information is printed
         """
 
         with open(in_file_path, mode="rb") as input_file, open(out_file_path, mode="w") as output_file:
