@@ -3,6 +3,7 @@
 import argparse
 import multiprocessing
 import os
+import time
 from multiprocessing.pool import Pool, ApplyResult
 from typing import List, Dict, Tuple
 
@@ -331,10 +332,15 @@ def _main() -> None:
 
     args = parser.parse_args()
 
+    time_start = time.time()
     if args.decode:
         HuffmanCodec.decode_file(args.input, args.output, args.verbose)
     else:
         HuffmanCodec.encode_file(args.input, args.output, args.text_encoding, args.block_size, args.verbose)
+
+    if args.verbose:
+        print()
+        print(f"Took : {round(time.time() - time_start, 3)}s")
 
 
 if __name__ == "__main__":
