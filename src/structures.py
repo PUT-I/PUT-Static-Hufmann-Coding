@@ -130,9 +130,12 @@ class HuffmanTree:
         global UINT8_0, UINT8_1
 
         if node.left is None and node.right is None:
-            bits = np.append(bits, UINT8_1)
-
             symbol_bits = np.unpackbits(np.frombuffer(node.symbol.encode(encoding=text_encoding), dtype=np.uint8))
+
+            for _ in range(round(len(symbol_bits) / 8)):
+                bits = np.append(bits, UINT8_1)
+            bits = np.append(bits, UINT8_0)
+
             bits = np.append(bits, symbol_bits)
         else:
             bits = np.append(bits, UINT8_0)
@@ -156,8 +159,16 @@ class HuffmanTree:
         index = counter.get()
         bit = bits[index]
         if bit == UINT8_1:
-            symbol_bits: np.array = bits[index + 1:index + 9]
-            counter.increase(8)
+            symbol_size = 8
+            while True:
+                index = counter.get()
+                if bits[index] == UINT8_1:
+                    symbol_size += 8
+                else:
+                    break
+
+            symbol_bits: np.array = bits[index + 1:index + symbol_size + 1]
+            counter.increase(symbol_size)
             symbol = np.packbits(symbol_bits).tobytes().decode(encoding=text_encoding)
             return HuffmanNode(0, symbol=symbol)
         else:

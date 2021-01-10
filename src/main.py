@@ -68,7 +68,7 @@ class HuffmanCodec:
             # Thirdly tree is created, encoded and saved to output file
             tree: HuffmanTree = HuffmanCodec._create_tree(frequencies)
 
-            encoded_tree = tree.encode()
+            encoded_tree = tree.encode(text_encoding=text_encoding)
             encoded_tree_length_bytes = len(encoded_tree).to_bytes(4, byteorder="big", signed=False)
 
             output_file.write(encoded_tree_length_bytes)
@@ -114,9 +114,7 @@ class HuffmanCodec:
         :param verbose: if set to True more information is printed
         """
 
-        with open(in_file_path, mode="rb") as input_file, open(out_file_path, mode="w") as output_file:
-            output_file.write("")
-
+        with open(in_file_path, mode="rb") as input_file:
             # First Huffman tree is decoded
             text_encoding_length = int.from_bytes(input_file.read(1), byteorder="big", signed=False)  # In bytes
 
@@ -151,36 +149,40 @@ class HuffmanCodec:
             pool = Pool(processes=multiprocessing.cpu_count())
             pool_jobs: List[Tuple[ApplyResult, int]] = []
 
-            # Thirdly block from file are read and decoded in separate process
-            # Finish is set to True when all data is read
-            finish = False
-            while not finish:
-                # Read enough data to fill pool jobs
-                while len(pool_jobs) < multiprocessing.cpu_count():
-                    pb.print_progress_bar(data_processed)
+            with open(out_file_path, mode="w", encoding=text_encoding) as output_file:
+                output_file.write("")
 
-                    data_length = int.from_bytes(input_file.read(4), byteorder="big", signed=False)  # In bytes
-                    padding_length = int.from_bytes(input_file.read(1), byteorder="big", signed=False)  # In bits
+                # Thirdly block from file are read and decoded in separate process
+                # Finish is set to True when all data is read
+                finish = False
+                while not finish:
+                    # Read enough data to fill pool jobs
+                    while len(pool_jobs) < multiprocessing.cpu_count():
+                        pb.print_progress_bar(data_processed)
 
-                    data_bytes = input_file.read(data_length)
+                        data_length = int.from_bytes(input_file.read(4), byteorder="big", signed=False)  # In bytes
+                        padding_length = int.from_bytes(input_file.read(1), byteorder="big", signed=False)  # In bits
 
-                    if data_bytes == bytes():
-                        finish = True
-                        break
+                        data_bytes = input_file.read(data_length)
 
-                    data_processed += 4 + 1
+                        if data_bytes == bytes():
+                            finish = True
+                            break
 
-                    pool_jobs.append(
-                        (pool.apply_async(HuffmanCodec._decode_data, (data_bytes, tree, padding_length)), data_length)
-                    )
+                        data_processed += 4 + 1
 
-                # Wait for data to be processed
-                for job in pool_jobs:
-                    decoded = job[0].get()
-                    output_file.write(decoded)
-                    data_processed += job[1]
-                    pb.print_progress_bar(data_processed)
-                pool_jobs.clear()
+                        pool_jobs.append(
+                            (pool.apply_async(HuffmanCodec._decode_data, (data_bytes, tree, padding_length)),
+                             data_length)
+                        )
+
+                    # Wait for data to be processed
+                    for job in pool_jobs:
+                        decoded = job[0].get()
+                        output_file.write(decoded)
+                        data_processed += job[1]
+                        pb.print_progress_bar(data_processed)
+                    pool_jobs.clear()
 
     @staticmethod
     def _create_tree(frequencies: Dict[str, float]) -> HuffmanTree:
