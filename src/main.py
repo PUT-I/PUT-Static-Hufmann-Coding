@@ -146,10 +146,10 @@ class HuffmanCodec:
             data_processed = 4 + tree_length
 
             # This pool will be used for data blocks decoding
-            pool = Pool(processes=multiprocessing.cpu_count())
             pool_jobs: List[Tuple[ApplyResult, int]] = []
 
-            with open(out_file_path, mode="w", encoding=text_encoding) as output_file:
+            with open(out_file_path, mode="w", encoding=text_encoding) as output_file, \
+                    Pool(processes=multiprocessing.cpu_count()) as pool:
                 output_file.write("")
 
                 # Thirdly block from file are read and decoded in separate process
