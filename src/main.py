@@ -33,8 +33,8 @@ class HuffmanCodec:
                 open(out_file_path, mode="wb") as output_file:
             output_file.write(bytes())
 
-            # First frequencies of each character in text are obtained
-            frequencies: Dict[str, int] = {}
+            # First count of each character in text are obtained
+            symbol_counts: Dict[str, int] = {}
             while True:
                 data = input_file.read(block_size)
                 if not data:
@@ -42,16 +42,16 @@ class HuffmanCodec:
 
                 frequencies_part = count_symbols_in_string(data)
                 for key in frequencies_part:
-                    if key in frequencies:
-                        frequencies[key] = frequencies[key] + frequencies_part[key]
+                    if key in symbol_counts:
+                        symbol_counts[key] = symbol_counts[key] + frequencies_part[key]
                     else:
-                        frequencies[key] = frequencies_part[key]
+                        symbol_counts[key] = frequencies_part[key]
             # Moves input file pointer to start position
             input_file.seek(0)
 
             if verbose:
-                print("Symbol frequencies obtained")
-                print(str(frequencies).replace("{", "").replace("}", "").replace(", ", "\n"))
+                print("Symbol counts obtained")
+                print(str(symbol_counts).replace("{", "").replace("}", "").replace(", ", "\n"))
                 print()
 
             # Secondly text encoding is saved to output file
@@ -66,7 +66,7 @@ class HuffmanCodec:
                 print()
 
             # Thirdly tree is created, encoded and saved to output file
-            tree: HuffmanTree = HuffmanCodec._create_tree(frequencies)
+            tree: HuffmanTree = HuffmanCodec._create_tree(symbol_counts)
 
             encoded_tree = tree.encode(text_encoding=text_encoding)
             encoded_tree_length_bytes = len(encoded_tree).to_bytes(4, byteorder="big", signed=False)
@@ -77,7 +77,13 @@ class HuffmanCodec:
             if verbose:
                 print("Huffman tree created")
                 print("Code")
-                print(str(HuffmanCodec._tree_to_dict(tree)).replace("{", "").replace("}", "").replace(", ", "\n"))
+
+                huffman_code: dict = HuffmanCodec._tree_to_dict(tree)
+                print(str(huffman_code).replace("{", "").replace("}", "").replace(", ", "\n"))
+
+                average_code_length = sum([len(code) for code in huffman_code.values()]) / len(huffman_code)
+
+                print(f"Average code length [bits] : {round(average_code_length, 2)}")
                 print()
 
             # Here progressbar is set upped

@@ -12,7 +12,7 @@ NON_PRINTABLE_SYMBOLS = {
 def count_symbols_in_string(text: str, escape_symbols: bool = False, output_file_path: str = "") -> dict:
     """ Counts symbols in text from file and saves result to dict and to CSV file
 
-    :param text: UTF-8 encoded text
+    :param text:
     :param escape_symbols: if true non printable symbols are replaced with printable representation
     :param output_file_path: path of output file, if set to "" file will not be written
     :return: dictionary containing symbols as keys and their frequency as values
